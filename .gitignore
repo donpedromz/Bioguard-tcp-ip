@@ -1,0 +1,9 @@
+# Configuraciones de Trustore en el cliente
+bioguard_client/src/main/resources/application.properties
+bioguard_client/src/main/resources/bioguard_keystore.p12
+# Configuraciones de Keystore de lado del servidor
+bioguard_server/src/main/resources/application.properties
+bioguard_server/src/main/resources/bioguard_keystore.p12
+
+# Datos almacenados por el servidor
+bioguard_server/data
