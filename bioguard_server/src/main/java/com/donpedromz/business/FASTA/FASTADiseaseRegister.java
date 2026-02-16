@@ -1,11 +1,12 @@
 package com.donpedromz.business.FASTA;
 
-import com.donpedromz.business.DataValidationException;
+import com.donpedromz.business.exceptions.DataValidationException;
 import com.donpedromz.business.IMessageProcessor;
-import com.donpedromz.business.InvalidMessageFormatException;
+import com.donpedromz.business.FASTA.exceptions.InvalidMessageFormatException;
 import com.donpedromz.business.FASTA.exceptions.InvalidFastaFormatException;
 import com.donpedromz.data.disease.IDiseaseRepository;
 import com.donpedromz.entities.Disease;
+import com.donpedromz.entities.InfectiousnessLevel;
 
 /**
  * @version 1.0
@@ -59,11 +60,12 @@ public class FASTADiseaseRegister implements IMessageProcessor{
             throw new InvalidFastaFormatException("FASTA header for Disease should have exactly " + EXPECTED_HEADER_FIELDS + " fields separated by '|'");
         }
         String diseaseName = header[0].substring(1).trim();
-        String infectiousness = header[1].trim();
+        String infectiousnessRaw = header[1].trim();
+        InfectiousnessLevel infectiousnessLevel = InfectiousnessLevel.from(infectiousnessRaw);
         String sequence = lines[1].trim();
         return new Disease(
                 diseaseName,
-                infectiousness,
+                infectiousnessLevel,
                 sequence
         );
     }

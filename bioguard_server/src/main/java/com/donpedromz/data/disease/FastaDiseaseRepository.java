@@ -60,14 +60,14 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
      * Verificador de integridad inyectado para cálculo de hashes y validación de archivos.
      */
     private final IntegrityVerifier integrityVerifier;
-
     /**
-     * Crea el repositorio FASTA de enfermedades.
+     * Crea el repositorio FASTA de enfermedades a partir de configuración.
      *
-     * @param diseasesDirectoryPath ruta del directorio donde se almacenarán archivos FASTA
+     * @param storageConfig configuración de almacenamiento FASTA
      * @param integrityVerifier verificador de integridad para hashing y validación de archivos
      */
-    public FastaDiseaseRepository(String diseasesDirectoryPath, IntegrityVerifier integrityVerifier) {
+    public FastaDiseaseRepository(IDiseaseStorageConfig storageConfig, IntegrityVerifier integrityVerifier) {
+        String diseasesDirectoryPath = requireDiseasesDirectory(storageConfig);
         if (diseasesDirectoryPath == null || diseasesDirectoryPath.isBlank()) {
             throw new ValidationException("La ruta del directorio de enfermedades es obligatoria.");
         }
@@ -80,22 +80,12 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
     }
 
     /**
-     * Crea el repositorio FASTA de enfermedades a partir de configuración.
-     *
-     * @param storageConfig configuración de almacenamiento FASTA
-     * @param integrityVerifier verificador de integridad para hashing y validación de archivos
-     */
-    public FastaDiseaseRepository(IDiseaseFastaStorageConfig storageConfig, IntegrityVerifier integrityVerifier) {
-        this(requireDiseasesDirectory(storageConfig), integrityVerifier);
-    }
-
-    /**
      * Valida la configuración de almacenamiento y extrae la ruta del directorio de enfermedades.
      *
      * @param storageConfig configuración de almacenamiento FASTA a validar
      * @return ruta del directorio de enfermedades extraída de la configuración
      */
-    private static String requireDiseasesDirectory(IDiseaseFastaStorageConfig storageConfig) {
+    private static String requireDiseasesDirectory(IDiseaseStorageConfig storageConfig) {
         if (storageConfig == null) {
             throw new ValidationException("storageConfig no puede ser null");
         }
@@ -266,8 +256,8 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
             diseaseUuid = UUID.randomUUID();
         }
         String diseaseName = FastaUtils.trimOrEmpty(disease.getDiseaseName());
-        String infectiousness = FastaUtils.trimOrEmpty(disease.getInfectiousness());
         String geneticSequence = FastaUtils.trimOrEmpty(disease.getGeneticSequence());
+        InfectiousnessLevel infectiousnessLevel = disease.getInfectiousnessLevel();
         List<String> invalidFields = new ArrayList<>();
         if (diseaseName.isEmpty() || !diseaseName.matches(DISEASE_NAME_REGEX)) {
             invalidFields.add("diseaseName");
@@ -277,23 +267,15 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
         } else if (geneticSequence.length() < MIN_DISEASE_SEQUENCE_LENGTH) {
             invalidFields.add("geneticSequence (mínimo " + MIN_DISEASE_SEQUENCE_LENGTH + " nucleótidos)");
         }
-        if (infectiousness.isEmpty()) {
-            invalidFields.add("infectiousness");
-        }
-        InfectiousnessLevel infectiousnessLevel = null;
-        if (!infectiousness.isEmpty()) {
-            try {
-                infectiousnessLevel = InfectiousnessLevel.from(infectiousness);
-            } catch (RuntimeException exception) {
-                invalidFields.add("infectiousness");
-            }
+        if (infectiousnessLevel == null) {
+            invalidFields.add("infectiousnessLevel");
         }
         if (!invalidFields.isEmpty()) {
             throw new ValidationException("Campos inválidos: " + String.join(", ", invalidFields));
         }
         disease.setUuid(diseaseUuid);
         disease.setDiseaseName(diseaseName);
-        disease.setInfectiousness(infectiousnessLevel.name());
+        disease.setInfectiousnessLevel(infectiousnessLevel);
         disease.setGeneticSequence(geneticSequence);
     }
 
@@ -304,7 +286,7 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
      * @return contenido en formato FASTA
      */
     private String buildFastaContent(Disease disease) {
-        return ">" + disease.getUuid() + "|" + disease.getDiseaseName() + "|" + disease.getInfectiousness() +
+        return ">" + disease.getUuid() + "|" + disease.getDiseaseName() + "|" + disease.getInfectiousnessLevel().name() +
                 System.lineSeparator() +
                 disease.getGeneticSequence();
     }
@@ -317,7 +299,7 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
      * @return contenido canónico para hash, sin incluir el UUID ni otros metadatos variables
      */
     private String buildCanonicalSampleContent(Disease disease) {
-        return ">" + disease.getDiseaseName() + "|" + disease.getInfectiousness() +
+        return ">" + disease.getDiseaseName() + "|" + disease.getInfectiousnessLevel().name() +
                 System.lineSeparator() +
                 disease.getGeneticSequence();
     }
@@ -348,9 +330,10 @@ public class FastaDiseaseRepository implements IDiseaseRepository {
             }
             UUID diseaseUuid = UUID.fromString(headerFields[0].trim());
             String diseaseName = headerFields[1].trim();
-            String infectiousness = headerFields[2].trim();
+            String infectiousnessRaw = headerFields[2].trim();
+            InfectiousnessLevel infectiousnessLevel = InfectiousnessLevel.from(infectiousnessRaw);
 
-            Disease disease = new Disease(diseaseUuid, diseaseName, infectiousness, sequence);
+            Disease disease = new Disease(diseaseUuid, diseaseName, infectiousnessLevel, sequence);
             verifyFileIntegrity(filePath, disease);
             return disease;
         } catch (CorruptedDataException corruptedException) {

@@ -24,10 +24,10 @@ public interface IDiagnosticRepository {
 	 * y un mensaje FASTA original dado.
 	 * @param patientUuid El UUID del paciente para el cual se desea verificar la existencia del diagnóstico.
 	 *                       No debe ser null.
-	 * @param originalFastaMessage El mensaje FASTA original asociado al diagnóstico que se desea verificar.
+	 * @param sampleSequence El mensaje FASTA original asociado al diagnóstico que se desea verificar.
 	 *                                No debe ser null ni vacío.
 	 * @return {@code true} si existe un diagnóstico para el paciente y mensaje FASTA original proporcionados,
 	 * {@code false} en caso contrario.
 	 */
-	boolean existsByPatientAndSampleHash(UUID patientUuid, String originalFastaMessage);
+	boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence);
 }

@@ -79,7 +79,7 @@ public class CSVPatientDiagnosticHistoryRepository implements IDiagnosticHistory
         if (integrityVerifier == null) {
             throw new ValidationException("integrityVerifier no puede ser null");
         }
-        String diagnosticsPath = storageConfig.getDiagnosticsDirectory();
+        String diagnosticsPath = storageConfig.getDiagnosticsPath();
         if (diagnosticsPath == null || diagnosticsPath.isBlank()) {
             throw new ValidationException("diagnosticsDirectory no puede ser vacío");
         }
@@ -112,9 +112,8 @@ public class CSVPatientDiagnosticHistoryRepository implements IDiagnosticHistory
                 rows.add(HISTORY_HEADER);
                 List<String[]> historyDataRows = new ArrayList<>();
 
-                String currentFasta = diagnostic.getOriginalFastaMessage().trim();
-                String currentSequence = FastaUtils.getSequenceFromFasta(currentFasta);
-                String currentHash = integrityVerifier.computeHash(currentFasta);
+                String currentSequence = diagnostic.getSampleSequence();
+                String currentHash = integrityVerifier.computeHash(currentSequence);
                 int previousSamplesCount = 0;
 
                 for (Path previousSamplePath : listSampleFiles(samplesDirectory)) {
@@ -135,8 +134,15 @@ public class CSVPatientDiagnosticHistoryRepository implements IDiagnosticHistory
                     if (previousSampleContent == null || previousSampleContent.isBlank()) {
                         continue;
                     }
-                    String previousSampleDate = getSampleDateFromFasta(previousSampleContent);
-                    String previousSampleSequence = FastaUtils.getSequenceFromFasta(previousSampleContent);
+                    String previousSampleDate;
+                    String previousSampleSequence;
+                    if (previousSampleContent.startsWith(">")) {
+                        previousSampleDate = getSampleDateFromFasta(previousSampleContent);
+                        previousSampleSequence = FastaUtils.getSequenceFromFasta(previousSampleContent);
+                    } else {
+                        previousSampleDate = "";
+                        previousSampleSequence = previousSampleContent.trim().toUpperCase();
+                    }
                     List<String[]> changeRows = calculateChangeRows(currentSequence, previousSampleSequence);
                     for (String[] changeRow : changeRows) {
                         historyDataRows.add(new String[]{previousSampleDate, changeRow[0], changeRow[1], changeRow[2]});
@@ -400,8 +406,8 @@ public class CSVPatientDiagnosticHistoryRepository implements IDiagnosticHistory
         if (diagnostic.getSampleDate() == null || diagnostic.getSampleDate().isBlank()) {
             throw new ValidationException("Diagnostic sampleDate no puede ser vacío");
         }
-        if (diagnostic.getOriginalFastaMessage() == null || diagnostic.getOriginalFastaMessage().isBlank()) {
-            throw new ValidationException("Diagnostic originalFastaMessage no puede ser vacío");
+        if (diagnostic.getSampleSequence() == null || diagnostic.getSampleSequence().isBlank()) {
+            throw new ValidationException("Diagnostic sampleSequence no puede ser vacío");
         }
         if (diagnostic.getPatient() == null || diagnostic.getPatient().getUuid() == null) {
             throw new ValidationException("Diagnostic patient.uuid no puede ser null");

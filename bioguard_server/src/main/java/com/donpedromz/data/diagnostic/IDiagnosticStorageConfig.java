@@ -11,11 +11,11 @@ public interface IDiagnosticStorageConfig {
      * Obtiene la ruta del directorio donde se almacenan los diagnósticos.
      * @return la ruta del directorio de diagnósticos configurada
      */
-    String getDiagnosticsDirectory();
+    String getDiagnosticsPath();
 
     /**
      * Obtiene la ruta del directorio donde se almacenan los informes de alta infecciosidad.
      * @return la ruta del directorio de informes de alta infecciosidad configurada
      */
-    String getHighInfectiousnessReportsDirectory();
+    String getHighInfectiousnessReportsPath();
 }

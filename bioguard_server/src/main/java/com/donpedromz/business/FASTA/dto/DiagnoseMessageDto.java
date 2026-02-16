@@ -9,17 +9,14 @@ public class DiagnoseMessageDto {
     private final String patientDocument;
     private final String sampleDate;
     private final String geneticSequence;
-    private final String originalFastaMessage;
     public DiagnoseMessageDto(
             String patientDocument,
             String sampleDate,
-            String geneticSequence,
-            String originalFastaMessage
+            String geneticSequence
     ) {
         this.patientDocument = patientDocument;
         this.sampleDate = sampleDate;
         this.geneticSequence = geneticSequence;
-        this.originalFastaMessage = originalFastaMessage;
     }
     public String patientDocument() {
         return patientDocument;
@@ -29,8 +26,5 @@ public class DiagnoseMessageDto {
     }
     public String geneticSequence() {
         return geneticSequence;
-    }
-    public String originalFastaMessage() {
-        return originalFastaMessage;
     }
 }

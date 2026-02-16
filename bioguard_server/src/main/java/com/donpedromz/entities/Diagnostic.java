@@ -12,7 +12,7 @@ import java.util.UUID;
 public class Diagnostic {
 	private UUID diagnosticUuid;
 	private String sampleDate;
-	private String originalFastaMessage;
+	private String sampleSequence;
 	private Patient patient;
 	private List<Disease> diseases;
 
@@ -20,14 +20,14 @@ public class Diagnostic {
 	 * Constructor de la clase Diagnostic.
 	 * @param diagnosticUuid El UUID único del diagnóstico. No debe ser null.
 	 * @param sampleDate La fecha de la muestra en formato String. No debe ser null ni vacío.
-	 * @param originalFastaMessage El mensaje FASTA original asociado al diagnóstico. No debe ser null ni vacío.
+	 * @param sampleSequence La secuencia genética extraída de la muestra FASTA. No debe ser null ni vacía.
 	 * @param patient El paciente asociado al diagnóstico. No debe ser null.
 	 * @param diseases La lista de enfermedades diagnosticadas. Si es null, se inicializa como una lista vacía.
 	 */
-	public Diagnostic(UUID diagnosticUuid, String sampleDate, String originalFastaMessage, Patient patient, List<Disease> diseases) {
+	public Diagnostic(UUID diagnosticUuid, String sampleDate, String sampleSequence, Patient patient, List<Disease> diseases) {
 		this.diagnosticUuid = diagnosticUuid;
 		this.sampleDate = sampleDate;
-		this.originalFastaMessage = originalFastaMessage;
+		this.sampleSequence = sampleSequence;
 		this.patient = patient;
 		this.diseases = diseases == null ? new ArrayList<>() : new ArrayList<>(diseases);
 	}
@@ -48,12 +48,12 @@ public class Diagnostic {
 		this.sampleDate = sampleDate;
 	}
 
-	public String getOriginalFastaMessage() {
-		return originalFastaMessage;
+	public String getSampleSequence() {
+		return sampleSequence;
 	}
 
-	public void setOriginalFastaMessage(String originalFastaMessage) {
-		this.originalFastaMessage = originalFastaMessage;
+	public void setSampleSequence(String sampleSequence) {
+		this.sampleSequence = sampleSequence;
 	}
 
 	public Patient getPatient() {

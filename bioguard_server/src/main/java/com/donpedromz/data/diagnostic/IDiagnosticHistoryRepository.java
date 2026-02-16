@@ -10,7 +10,7 @@ public interface IDiagnosticHistoryRepository {
      * Guarda un diagnóstico en el historial. Esta operación puede implicar la escritura de datos en un archivo,
      * base de datos u otra fuente de almacenamiento.
      * @param diagnostic La entidad de diagnóstico que se desea guardar. No debe ser null.
-     *                   La implementación debe validar los datos
+     *                   La implementación debe validar los datos.
      * @return Una cadena que representa el identificador único del diagnóstico guardado.
      */
     String save(Diagnostic diagnostic);

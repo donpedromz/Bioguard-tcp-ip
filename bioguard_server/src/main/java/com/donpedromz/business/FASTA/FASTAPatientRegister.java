@@ -1,8 +1,8 @@
 package com.donpedromz.business.FASTA;
 
-import com.donpedromz.business.DataValidationException;
+import com.donpedromz.business.exceptions.DataValidationException;
 import com.donpedromz.business.IMessageProcessor;
-import com.donpedromz.business.InvalidMessageFormatException;
+import com.donpedromz.business.FASTA.exceptions.InvalidMessageFormatException;
 import com.donpedromz.business.FASTA.exceptions.InvalidFastaFormatException;
 import com.donpedromz.data.patient.IPatientRepository;
 import com.donpedromz.entities.Patient;

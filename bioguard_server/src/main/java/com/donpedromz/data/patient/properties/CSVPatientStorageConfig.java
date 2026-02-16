@@ -1,14 +1,14 @@
 package com.donpedromz.data.patient.properties;
 
 import com.donpedromz.common.IConfigReader;
-import com.donpedromz.data.patient.ICsvStorageConfig;
+import com.donpedromz.data.patient.IPatientStorageConfig;
 
 /**
  * @author juanp
  * @version 1.0
  * Implementación de la configuración para el almacenamiento de pacientes en formato CSV.
  */
-public class CsvStorageConfig implements ICsvStorageConfig {
+public class CSVPatientStorageConfig implements IPatientStorageConfig {
     /**
      * Clave de configuración para la ruta del archivo CSV de pacientes dentro del application.properties
      */
@@ -23,7 +23,7 @@ public class CsvStorageConfig implements ICsvStorageConfig {
      * @param configReader Lector de configuración que proporciona acceso a
      *                     las propiedades necesarias para configurar el almacenamiento CSV.
      */
-    public CsvStorageConfig(IConfigReader configReader) {
+    public CSVPatientStorageConfig(IConfigReader configReader) {
         if (configReader == null) {
             throw new IllegalArgumentException("configReader no puede ser null");
         }
@@ -35,7 +35,7 @@ public class CsvStorageConfig implements ICsvStorageConfig {
      * @return
      */
     @Override
-    public String getPatientsCsvPath() {
+    public String getPatientStoragePath() {
         return getRequiredPath();
     }
 
@@ -45,9 +45,9 @@ public class CsvStorageConfig implements ICsvStorageConfig {
      * @return la ruta del archivo CSV de pacientes configurada
      */
     private String getRequiredPath() {
-        String value = configReader.getString(CsvStorageConfig.PATIENTS_CSV_KEY);
+        String value = configReader.getString(CSVPatientStorageConfig.PATIENTS_CSV_KEY);
         if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Falta la propiedad de configuración: " + CsvStorageConfig.PATIENTS_CSV_KEY);
+            throw new IllegalStateException("Falta la propiedad de configuración: " + CSVPatientStorageConfig.PATIENTS_CSV_KEY);
         }
         return value.trim();
     }

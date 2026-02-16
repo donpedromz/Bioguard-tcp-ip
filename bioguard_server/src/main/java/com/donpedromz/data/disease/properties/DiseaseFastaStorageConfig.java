@@ -1,7 +1,7 @@
 package com.donpedromz.data.disease.properties;
 
 import com.donpedromz.common.IConfigReader;
-import com.donpedromz.data.disease.IDiseaseFastaStorageConfig;
+import com.donpedromz.data.disease.IDiseaseStorageConfig;
 
 /**
  * @version 1.0
@@ -9,7 +9,7 @@ import com.donpedromz.data.disease.IDiseaseFastaStorageConfig;
  * Implementación de la interfaz IDiseaseFastaStorageConfig que obtiene la
  * configuración de almacenamiento de enfermedades.
  */
-public class DiseaseFastaStorageConfig implements IDiseaseFastaStorageConfig {
+public class DiseaseFastaStorageConfig implements IDiseaseStorageConfig {
     /**
      * Clave de configuración para la ruta del directorio de enfermedades dentro del application.properties.
      */

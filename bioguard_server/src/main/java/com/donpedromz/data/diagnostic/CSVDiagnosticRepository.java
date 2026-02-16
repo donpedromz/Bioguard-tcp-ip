@@ -1,7 +1,6 @@
 package com.donpedromz.data.diagnostic;
 
 import com.donpedromz.data.IntegrityVerifier;
-import com.donpedromz.data.FastaUtils;
 import com.donpedromz.data.exceptions.ConflictException;
 import com.donpedromz.data.exceptions.CorruptedDataException;
 import com.donpedromz.data.exceptions.PersistenceException;
@@ -83,11 +82,15 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
      */
     private final IntegrityVerifier integrityVerifier;
     /**
-     * Crea el repositorio de diagnósticos en la ruta indicada.
-     * @param diagnosticsDirectoryPath directorio raíz donde se almacenan diagnósticos
+     * Crea el repositorio de diagnósticos utilizando la configuración proporcionada.
+     * @param storageConfig configuración que proporciona la ruta del directorio de diagnósticos
      * @param integrityVerifier verificador de integridad para hashing y validación de archivos
      */
-    public CSVDiagnosticRepository(String diagnosticsDirectoryPath, IntegrityVerifier integrityVerifier) {
+    public CSVDiagnosticRepository(IDiagnosticStorageConfig storageConfig, IntegrityVerifier integrityVerifier) {
+        if (storageConfig == null) {
+            throw new ValidationException("storageConfig no puede ser null");
+        }
+        String diagnosticsDirectoryPath = storageConfig.getDiagnosticsPath();
         if (diagnosticsDirectoryPath == null || diagnosticsDirectoryPath.isBlank()) {
             throw new ValidationException("La ruta del directorio de diagnósticos es obligatoria.");
         }
@@ -98,18 +101,9 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
         this.integrityVerifier = integrityVerifier;
         initializeStorage();
     }
-
-    /**
-     * Crea el repositorio de diagnósticos utilizando la configuración proporcionada.
-     * @param storageConfig configuración que proporciona la ruta del directorio de diagnósticos
-     * @param integrityVerifier verificador de integridad para hashing y validación de archivos
-     */
-    public CSVDiagnosticRepository(IDiagnosticStorageConfig storageConfig, IntegrityVerifier integrityVerifier) {
-        this(requireStorageDirectory(storageConfig), integrityVerifier);
-    }
     /**
      * Guarda un diagnóstico en un archivo CSV dentro de un subdirectorio específico para el paciente,
-     * y almacena la muestra FASTA original
+     * y almacena la secuencia genética de la muestra
      * en un subdirectorio de muestras utilizando un hash SHA-256 para evitar duplicados.
      * @param entity diagnóstico a guardar
      */
@@ -128,21 +122,22 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
                 Files.createDirectories(samplesDirectory);
                 Files.createDirectories(generatedDiagnosticsDirectory);
 
-                String sampleHash = integrityVerifier.computeHash(entity.getOriginalFastaMessage());
+                String sampleSequence = entity.getSampleSequence();
+                String sampleHash = integrityVerifier.computeHash(sampleSequence);
                 Path samplePath = samplesDirectory.resolve(sampleHash + FASTA_EXTENSION);
                 if (Files.exists(samplePath)) {
                     throw new ConflictException("No se puede generar diagnóstico: la muestra ya fue registrada previamente para este paciente.");
                 }
                 Files.writeString(
                         samplePath,
-                        entity.getOriginalFastaMessage(),
+                        sampleSequence,
                         StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE_NEW
                 );
 
                 String diagnosticFileName = entity.getSampleDate() + "_" + entity.getDiagnosticUuid() + CSV_EXTENSION;
                 Path diagnosticFilePath = generatedDiagnosticsDirectory.resolve(diagnosticFileName);
-                String patientSequence = FastaUtils.getSequenceFromFasta(entity.getOriginalFastaMessage());
+                String patientSequence = entity.getSampleSequence();
                 List<String> csvRows = getStrings(entity, patientSequence);
                 Files.write(
                         diagnosticFilePath,
@@ -185,13 +180,13 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
     /**
      * Verifica si ya existe una muestra registrada para el paciente con el mismo hash SHA-256.
      * @param patientUuid UUID del paciente
-     * @param originalFastaMessage mensaje FASTA original de la muestra
+     * @param sampleSequence mensaje FASTA original de la muestra
      * @return {@code true} si ya existe una muestra idéntica para ese paciente
      */
     @Override
-    public boolean existsByPatientAndSampleHash(UUID patientUuid, String originalFastaMessage) {
+    public boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence) {
         synchronized (GLOBAL_LOCK) {
-            if (patientUuid == null || originalFastaMessage == null || originalFastaMessage.isBlank()) {
+            if (patientUuid == null || sampleSequence == null || sampleSequence.isBlank()) {
                 return false;
             }
 
@@ -203,7 +198,7 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
                 return false;
             }
 
-            String sampleHash = integrityVerifier.computeHash(originalFastaMessage);
+            String sampleHash = integrityVerifier.computeHash(sampleSequence);
             Path samplePath = samplesDirectory.resolve(sampleHash + FASTA_EXTENSION);
 
             if (Files.exists(samplePath) && Files.isRegularFile(samplePath)) {
@@ -231,19 +226,6 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
             }
         }
     }
-
-    /**
-     * Obtiene la ruta del directorio de diagnósticos a partir de la configuración proporcionada,
-     * @param storageConfig configuración que proporciona la ruta del directorio de diagnósticos
-     * @return la ruta del directorio de diagnósticos extraída de la configuración
-     */
-    private static String requireStorageDirectory(IDiagnosticStorageConfig storageConfig) {
-        if (storageConfig == null) {
-            throw new ValidationException("storageConfig no puede ser null");
-        }
-        return storageConfig.getDiagnosticsDirectory();
-    }
-
     private void validateForSave(Diagnostic diagnostic) {
         if (diagnostic == null) {
             throw new ValidationException("Diagnostic no puede ser null");
@@ -274,15 +256,14 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
             }
         }
 
-        String originalFasta = diagnostic.getOriginalFastaMessage();
-        if (originalFasta == null || originalFasta.isBlank()) {
-            invalidFields.add("originalFastaMessage");
+        String sampleSequence = diagnostic.getSampleSequence();
+        if (sampleSequence == null || sampleSequence.isBlank()) {
+            invalidFields.add("sampleSequence");
         } else {
-            String sequence = FastaUtils.getSequenceFromFasta(originalFasta);
-            if (sequence.isEmpty() || !sequence.matches(SEQUENCE_REGEX)) {
-                invalidFields.add("geneticSequence");
-            } else if (sequence.length() < MIN_DIAGNOSE_SEQUENCE_LENGTH) {
-                invalidFields.add("geneticSequence (mínimo " + MIN_DIAGNOSE_SEQUENCE_LENGTH + " nucleótidos)");
+            if (!sampleSequence.matches(SEQUENCE_REGEX)) {
+                invalidFields.add("sampleSequence");
+            } else if (sampleSequence.length() < MIN_DIAGNOSE_SEQUENCE_LENGTH) {
+                invalidFields.add("sampleSequence (mínimo " + MIN_DIAGNOSE_SEQUENCE_LENGTH + " nucleótidos)");
             }
         }
         if (diagnostic.getDiseases() == null || diagnostic.getDiseases().isEmpty()) {

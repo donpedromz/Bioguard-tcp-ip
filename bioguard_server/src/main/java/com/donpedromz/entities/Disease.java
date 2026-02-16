@@ -10,30 +10,30 @@ import java.util.UUID;
 public class Disease {
     private UUID uuid;
     private String diseaseName;
-    private String infectiousness;
+    private InfectiousnessLevel infectiousnessLevel;
     private String geneticSequence;
 
     /**
      * Constructor de la clase Disease.
      * @param diseaseName El nombre de la enfermedad. No debe ser null ni vacío.
-     * @param infectiousness El nivel de infecciosidad de la enfermedad. No debe ser null ni vacío.
+     * @param infectiousnessLevel El nivel de infecciosidad de la enfermedad. No debe ser null.
      * @param geneticSequence La secuencia genética asociada a la enfermedad. No debe ser null ni vacío.
      */
-    public Disease(String diseaseName, String infectiousness, String geneticSequence) {
-        this(null, diseaseName, infectiousness, geneticSequence);
+    public Disease(String diseaseName, InfectiousnessLevel infectiousnessLevel, String geneticSequence) {
+        this(null, diseaseName, infectiousnessLevel, geneticSequence);
     }
 
     /**
      * Constructor de la clase Disease con UUID.
      * @param uuid El UUID único de la enfermedad. No debe ser null.
      * @param diseaseName El nombre de la enfermedad. No debe ser null ni vacío.
-     * @param infectiousness El nivel de infecciosidad de la enfermedad. No debe ser null ni vacío.
+     * @param infectiousnessLevel El nivel de infecciosidad de la enfermedad. No debe ser null.
      * @param geneticSequence La secuencia genética asociada a la enfermedad. No debe ser null ni vacío.
      */
-    public Disease(UUID uuid, String diseaseName, String infectiousness, String geneticSequence) {
+    public Disease(UUID uuid, String diseaseName, InfectiousnessLevel infectiousnessLevel, String geneticSequence) {
         this.uuid = uuid;
         this.diseaseName = diseaseName;
-        this.infectiousness = infectiousness;
+        this.infectiousnessLevel = infectiousnessLevel;
         this.geneticSequence = geneticSequence;
     }
     public UUID getUuid() {
@@ -48,11 +48,11 @@ public class Disease {
     public void setDiseaseName(String diseaseName) {
         this.diseaseName = diseaseName;
     }
-    public String getInfectiousness() {
-        return infectiousness;
+    public InfectiousnessLevel getInfectiousnessLevel() {
+        return infectiousnessLevel;
     }
-    public void setInfectiousness(String infectiousness) {
-        this.infectiousness = infectiousness;
+    public void setInfectiousnessLevel(InfectiousnessLevel infectiousnessLevel) {
+        this.infectiousnessLevel = infectiousnessLevel;
     }
     public String getGeneticSequence() {
         return geneticSequence;
@@ -65,7 +65,7 @@ public class Disease {
         return "Disease{" +
                 "uuid=" + uuid +
                 ", diseaseName='" + diseaseName + '\'' +
-                ", infectiousness='" + infectiousness + '\'' +
+                ", infectiousnessLevel=" + infectiousnessLevel +
                 ", geneticSequence='" + geneticSequence + '\'' +
                 '}';
     }

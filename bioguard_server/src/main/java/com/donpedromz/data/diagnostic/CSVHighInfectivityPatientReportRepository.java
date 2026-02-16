@@ -53,7 +53,7 @@ public class CSVHighInfectivityPatientReportRepository implements IHighInfectivi
         if (storageConfig == null) {
             throw new ValidationException("storageConfig no puede ser null");
         }
-        String reportsDirectory = storageConfig.getHighInfectiousnessReportsDirectory();
+        String reportsDirectory = storageConfig.getHighInfectiousnessReportsPath();
         if (reportsDirectory == null || reportsDirectory.isBlank()) {
             throw new ValidationException("reportsDirectory no puede ser vacío");
         }
@@ -99,7 +99,7 @@ public class CSVHighInfectivityPatientReportRepository implements IHighInfectivi
             List<String> normalOrMediumVirusNames = new ArrayList<>();
             for (Disease disease : validDiseases) {
                 String diseaseName = disease.getDiseaseName().trim();
-                if (isHighInfectiousness(disease.getInfectiousness())) {
+                if (isHighInfectiousness(disease.getInfectiousnessLevel())) {
                     highInfectivityVirusNames.add(diseaseName);
                 } else {
                     normalOrMediumVirusNames.add(diseaseName);
@@ -176,7 +176,6 @@ public class CSVHighInfectivityPatientReportRepository implements IHighInfectivi
         if (parent != null) {
             Files.createDirectories(parent);
         }
-
         if (!Files.exists(reportFilePath) || Files.size(reportFilePath) == 0L) {
             Files.writeString(
                     reportFilePath,
@@ -227,17 +226,10 @@ public class CSVHighInfectivityPatientReportRepository implements IHighInfectivi
     }
     /**
      * Indica si un nivel de infecciosidad corresponde a categoría alta.
-     * @param infectiousness valor textual de infecciosidad
+     * @param infectiousnessLevel nivel de infecciosidad
      * @return {@code true} si el valor equivale a {@link InfectiousnessLevel#ALTA}
      */
-    private boolean isHighInfectiousness(String infectiousness) {
-        if (infectiousness == null || infectiousness.isBlank()) {
-            return false;
-        }
-        try {
-            return InfectiousnessLevel.from(infectiousness) == InfectiousnessLevel.ALTA;
-        } catch (IllegalArgumentException exception) {
-            return false;
-        }
+    private boolean isHighInfectiousness(InfectiousnessLevel infectiousnessLevel) {
+        return infectiousnessLevel == InfectiousnessLevel.ALTA;
     }
 }

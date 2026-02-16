@@ -1,4 +1,4 @@
-package com.donpedromz.business;
+package com.donpedromz.business.exceptions;
 
 /**
  * @version 1.0

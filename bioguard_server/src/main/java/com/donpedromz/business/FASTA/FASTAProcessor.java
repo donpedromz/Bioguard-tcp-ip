@@ -1,7 +1,7 @@
 package com.donpedromz.business.FASTA;
 
 import com.donpedromz.business.IMessageProcessor;
-import com.donpedromz.business.InvalidMessageFormatException;
+import com.donpedromz.business.FASTA.exceptions.InvalidMessageFormatException;
 import com.donpedromz.business.ProcessingPolicy;
 import com.donpedromz.business.FASTA.exceptions.InvalidFastaFormatException;
 

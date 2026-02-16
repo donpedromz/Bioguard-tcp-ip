@@ -1,6 +1,6 @@
 package com.donpedromz.data.exceptions;
 
-import com.donpedromz.business.DataValidationException;
+import com.donpedromz.business.exceptions.DataValidationException;
 
 /**
  * @version 1.0

@@ -1,4 +1,4 @@
-package com.donpedromz.business;
+package com.donpedromz.business.FASTA.exceptions;
 
 /**
  * @version 1.0

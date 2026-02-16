@@ -1,5 +1,7 @@
 package com.donpedromz.business;
 
+import com.donpedromz.business.FASTA.exceptions.InvalidMessageFormatException;
+
 import java.util.List;
 
 /**

@@ -1,11 +1,10 @@
 package com.donpedromz.business.FASTA;
 
-import com.donpedromz.business.DataValidationException;
+import com.donpedromz.business.exceptions.DataValidationException;
 import com.donpedromz.business.IMessageProcessor;
-import com.donpedromz.business.InvalidMessageFormatException;
+import com.donpedromz.business.FASTA.exceptions.InvalidMessageFormatException;
 import com.donpedromz.business.FASTA.exceptions.InvalidFastaFormatException;
 import com.donpedromz.business.FASTA.dto.DiagnoseMessageDto;
-import com.donpedromz.business.FASTA.dto.DiseaseMatchDto;
 import com.donpedromz.data.diagnostic.IDiagnosticHistoryRepository;
 import com.donpedromz.data.diagnostic.IHighInfectivityPatientReportRepository;
 import com.donpedromz.data.diagnostic.IDiagnosticRepository;
@@ -149,12 +148,10 @@ public class FASTADiagnose implements IMessageProcessor {
         }
         String geneticSequence = lines[1].trim().toUpperCase(Locale.ROOT);
 
-        String originalFastaMessage = message.trim();
         return new DiagnoseMessageDto(
             patientDocument,
             sampleDate,
-            geneticSequence,
-            originalFastaMessage
+            geneticSequence
         );
     }
 
@@ -162,12 +159,12 @@ public class FASTADiagnose implements IMessageProcessor {
      * Busca coincidencias exactas de la secuencia de paciente en todas las enfermedades.
      * @param patientSequence secuencia genética de la muestra del paciente
      * @param diseases enfermedades registradas
-     * @return lista de coincidencias encontradas
+     * @return lista de enfermedades detectadas cuya secuencia contiene la del paciente
      */
-    private List<DiseaseMatchDto> findMatches(String patientSequence, List<Disease> diseases) {
-        List<DiseaseMatchDto> matches = new ArrayList<>();
+    private List<Disease> findMatches(String patientSequence, List<Disease> diseases) {
+        List<Disease> matches = new ArrayList<>();
         for (Disease disease : diseases) {
-            DiseaseMatchDto match = findExactMatch(patientSequence, disease);
+            Disease match = findExactMatch(patientSequence, disease);
             if (match != null) {
                 matches.add(match);
             }
@@ -179,9 +176,9 @@ public class FASTADiagnose implements IMessageProcessor {
      * Busca una coincidencia exacta de la secuencia del paciente dentro de una enfermedad.
      * @param patientSequence secuencia de la muestra del paciente
      * @param disease enfermedad candidata
-     * @return DTO con enfermedad y rango de posiciones, o {@code null} si no coincide
+     * @return la enfermedad con su secuencia normalizada si coincide, o {@code null} si no coincide
      */
-    private DiseaseMatchDto findExactMatch(String patientSequence, Disease disease) {
+    private Disease findExactMatch(String patientSequence, Disease disease) {
         if (disease == null || disease.getGeneticSequence() == null || disease.getGeneticSequence().isBlank()) {
             return null;
         }
@@ -192,17 +189,11 @@ public class FASTADiagnose implements IMessageProcessor {
             return null;
         }
 
-        int end = start + patientSequence.length() - 1;
-        Disease matchedDisease = new Disease(
+        return new Disease(
                 disease.getUuid(),
                 disease.getDiseaseName(),
-                disease.getInfectiousness(),
+                disease.getInfectiousnessLevel(),
             diseaseSequence);
-        return new DiseaseMatchDto(
-            matchedDisease,
-            start,
-            end
-        );
     }
 
     /**
@@ -215,7 +206,7 @@ public class FASTADiagnose implements IMessageProcessor {
         try {
             DiagnoseMessageDto diagnoseMessage = verify(message);
             if (diagnoseMessage.patientDocument() == null || diagnoseMessage.sampleDate() == null
-                    || diagnoseMessage.geneticSequence() == null || diagnoseMessage.originalFastaMessage() == null) {
+                    || diagnoseMessage.geneticSequence() == null) {
                 throw new InvalidFastaFormatException("Diagnose FASTA contains null values");
             }
             Patient patient = patientRepository.getByDocument(diagnoseMessage.patientDocument());
@@ -225,24 +216,19 @@ public class FASTADiagnose implements IMessageProcessor {
             if (patient.getUuid() == null) {
                 throw new NotFoundException("no se encontró UUID para el paciente del documento enviado");
             }
-            if (diagnosticRepository.existsByPatientAndSampleHash(patient.getUuid(), diagnoseMessage.originalFastaMessage())) {
+            if (diagnosticRepository.existsByPatientAndSample(patient.getUuid(), diagnoseMessage.geneticSequence())) {
                 return DUPLICATE_SAMPLE_MESSAGE;
             }
             List<Disease> diseases = diseaseRepository.findAll();
-            List<DiseaseMatchDto> matches = findMatches(diagnoseMessage.geneticSequence(), diseases);
-            if (matches.isEmpty()) {
+            List<Disease> diagnosticDiseases = findMatches(diagnoseMessage.geneticSequence(), diseases);
+            if (diagnosticDiseases.isEmpty()) {
                 throw new NotFoundException("no se encontró ninguna enfermedad que coincida con dicha secuencia");
-            }
-
-            List<Disease> diagnosticDiseases = new ArrayList<>();
-            for (DiseaseMatchDto match : matches) {
-                diagnosticDiseases.add(match.disease());
             }
 
             Diagnostic diagnostic = new Diagnostic(
                     UUID.randomUUID(),
                     diagnoseMessage.sampleDate(),
-                    diagnoseMessage.originalFastaMessage(),
+                    diagnoseMessage.geneticSequence(),
                     patient,
                     diagnosticDiseases);
             List<String> operationMessages = new ArrayList<>();

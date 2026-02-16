@@ -10,7 +10,7 @@ import com.donpedromz.data.diagnostic.IDiagnosticStorageConfig;
  * Esta clase se encarga de leer las propiedades necesarias para configurar el almacenamiento de diagnósticos
  * desde una fuente de configuración proporcionada por un IConfigReader.
  */
-public class DiagnosticStorageConfig implements IDiagnosticStorageConfig {
+public class CSVDiagnosticStorageConfig implements IDiagnosticStorageConfig {
     /**
      * Clave de configuración para la ruta del directorio de diagnósticos dentro del application.properties
      */
@@ -32,7 +32,7 @@ public class DiagnosticStorageConfig implements IDiagnosticStorageConfig {
      * @param configReader Lector de configuración que proporciona acceso a las propiedades
      *                     necesarias para configurar el almacenamiento de diagnósticos.
      */
-    public DiagnosticStorageConfig(IConfigReader configReader) {
+    public CSVDiagnosticStorageConfig(IConfigReader configReader) {
         if (configReader == null) {
             throw new IllegalArgumentException("configReader no puede ser null");
         }
@@ -44,7 +44,7 @@ public class DiagnosticStorageConfig implements IDiagnosticStorageConfig {
      * @return
      */
     @Override
-    public String getDiagnosticsDirectory() {
+    public String getDiagnosticsPath() {
         return getRequiredPath(DIAGNOSTICS_DIRECTORY_KEY);
     }
 
@@ -53,7 +53,7 @@ public class DiagnosticStorageConfig implements IDiagnosticStorageConfig {
      * @return
      */
     @Override
-    public String getHighInfectiousnessReportsDirectory() {
+    public String getHighInfectiousnessReportsPath() {
         return getRequiredPath(HIGH_INFECTIOUSNESS_REPORTS_DIRECTORY_KEY);
     }
 

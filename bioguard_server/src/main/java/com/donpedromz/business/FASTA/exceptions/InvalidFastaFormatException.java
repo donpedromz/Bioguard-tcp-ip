@@ -1,7 +1,5 @@
 package com.donpedromz.business.FASTA.exceptions;
 
-import com.donpedromz.business.InvalidMessageFormatException;
-
 public class InvalidFastaFormatException extends InvalidMessageFormatException {
     public InvalidFastaFormatException(String message) {
         super(message);

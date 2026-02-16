@@ -80,21 +80,15 @@ public class CSVPatientRepository implements IPatientRepository {
      */
     private boolean startupInfoPrinted;
     /**
-     * Crea un repositorio de pacientes respaldado por archivo CSV en la ruta especificada.
-     * @param filePath ruta del archivo CSV de pacientes
-     */
-    public CSVPatientRepository(String filePath) {
-        this.filePath = Paths.get(filePath).toAbsolutePath().normalize();
-        this.startupInfoPrinted = false;
-        initializeCsvFile();
-    }
-    /**
      * Crea un repositorio de pacientes usando configuración de almacenamiento CSV, 
      * extrayendo la ruta del archivo desde la configuración proporcionada.
      * @param storageConfig configuración con la ruta del CSV de pacientes
      */
-    public CSVPatientRepository(ICsvStorageConfig storageConfig) {
-        this(storageConfig.getPatientsCsvPath());
+    public CSVPatientRepository(IPatientStorageConfig storageConfig) {
+        String filePath = storageConfig.getPatientStoragePath();
+        this.filePath = Paths.get(filePath).toAbsolutePath().normalize();
+        this.startupInfoPrinted = false;
+        initializeCsvFile();
     }
     /**
      * Persiste un paciente en el CSV validando integridad de datos y unicidad de documento.
@@ -108,36 +102,11 @@ public class CSVPatientRepository implements IPatientRepository {
         synchronized (GLOBAL_FILE_LOCK) {
             validatePatientForPersistence(entity);
             initializeCsvFile();
-            boolean documentAlreadyExists = false;
-            try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
-                String line;
-                long lineNumber = 0L;
-                boolean isFirstLine = true;
-                while ((line = reader.readLine()) != null) {
-                    lineNumber++;
-                    if (isFirstLine) {
-                        isFirstLine = false;
-                        continue;
-                    }
-                    if (line.isBlank()) {
-                        continue;
-                    }
-                    Patient patient;
-                    try {
-                        patient = mapToPatient(line, lineNumber);
-                    } catch (CorruptedDataException corruptedException) {
-                        System.out.println("[TCP][CorruptedData] " + corruptedException.getMessage());
-                        continue;
-                    }
-                    if (!documentAlreadyExists && patient.getPatientDocument().equals(entity.getPatientDocument())) {
-                        documentAlreadyExists = true;
-                    }
+            List<Patient> existingPatients = readAllPatients();
+            for (Patient existing : existingPatients) {
+                if (existing.getPatientDocument().equals(entity.getPatientDocument())) {
+                    throw new ConflictException("Ya existe un paciente registrado con el documento: " + entity.getPatientDocument());
                 }
-            } catch (IOException exception) {
-                throw new PersistenceException("Error al inspeccionar pacientes en CSV", exception);
-            }
-            if (documentAlreadyExists) {
-                throw new ConflictException("Ya existe un paciente registrado con el documento: " + entity.getPatientDocument());
             }
             String row = buildCsvRow(entity);
             try (BufferedWriter writer = Files.newBufferedWriter(
@@ -166,36 +135,46 @@ public class CSVPatientRepository implements IPatientRepository {
                 return null;
             }
             initializeCsvFile();
-            try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
-                String line;
-                long lineNumber = 0L;
-                boolean isFirstLine = true;
-                while ((line = reader.readLine()) != null) {
-                    lineNumber++;
-                    if (isFirstLine) {
-                        isFirstLine = false;
-                        continue;
-                    }
-                    if (line.isBlank()) {
-                        continue;
-                    }
-
-                    Patient patient;
-                    try {
-                        patient = mapToPatient(line, lineNumber);
-                    } catch (CorruptedDataException corruptedException) {
-                        System.out.println("[TCP][CorruptedData] " + corruptedException.getMessage());
-                        continue;
-                    }
-                    if (document.trim().equals(patient.getPatientDocument())) {
-                        return patient;
-                    }
+            List<Patient> patients = readAllPatients();
+            for (Patient patient : patients) {
+                if (document.trim().equals(patient.getPatientDocument())) {
+                    return patient;
                 }
-                return null;
-            } catch (IOException exception) {
-                throw new PersistenceException("Error al buscar paciente por documento en CSV", exception);
             }
+            return null;
         }
+    }
+    /**
+     * Lee todas las filas válidas del archivo CSV y las mapea a entidades {@link Patient},
+     * omitiendo filas corruptas o con formato inválido.
+     * @return lista de pacientes válidos leídos del archivo CSV
+     * @throws PersistenceException si ocurre un error de E/S al leer el archivo
+     */
+    private List<Patient> readAllPatients() {
+        List<Patient> patients = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
+            String line;
+            long lineNumber = 0L;
+            boolean isFirstLine = true;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (line.isBlank()) {
+                    continue;
+                }
+                try {
+                    patients.add(mapToPatient(line, lineNumber));
+                } catch (CorruptedDataException corruptedException) {
+                    System.out.println("[TCP][CorruptedData] " + corruptedException.getMessage());
+                }
+            }
+        } catch (IOException exception) {
+            throw new PersistenceException("Error al leer pacientes desde CSV", exception);
+        }
+        return patients;
     }
     /**
      * Inicializa el archivo CSV, asegurando carpeta y encabezado.

@@ -1,5 +1,4 @@
 package com.donpedromz;
-
 import com.donpedromz.business.FASTA.FASTADiagnose;
 import com.donpedromz.business.FASTA.FASTADiseaseRegister;
 import com.donpedromz.business.FASTA.FASTAPatientRegister;
@@ -17,15 +16,15 @@ import com.donpedromz.data.diagnostic.IDiagnosticHistoryRepository;
 import com.donpedromz.data.diagnostic.IHighInfectivityPatientReportRepository;
 import com.donpedromz.data.diagnostic.IDiagnosticRepository;
 import com.donpedromz.data.diagnostic.IDiagnosticStorageConfig;
-import com.donpedromz.data.diagnostic.properties.DiagnosticStorageConfig;
+import com.donpedromz.data.diagnostic.properties.CSVDiagnosticStorageConfig;
 import com.donpedromz.data.disease.FastaDiseaseRepository;
-import com.donpedromz.data.disease.IDiseaseFastaStorageConfig;
+import com.donpedromz.data.disease.IDiseaseStorageConfig;
 import com.donpedromz.data.disease.IDiseaseRepository;
 import com.donpedromz.data.disease.properties.DiseaseFastaStorageConfig;
 import com.donpedromz.data.patient.CSVPatientRepository;
-import com.donpedromz.data.patient.ICsvStorageConfig;
+import com.donpedromz.data.patient.IPatientStorageConfig;
 import com.donpedromz.data.patient.IPatientRepository;
-import com.donpedromz.data.patient.properties.CsvStorageConfig;
+import com.donpedromz.data.patient.properties.CSVPatientStorageConfig;
 import com.donpedromz.network.INetworkService;
 import com.donpedromz.network.ISSLConfig;
 import com.donpedromz.network.SSLTCPServer;
@@ -43,9 +42,9 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         IConfigReader configReader = new PropertiesManager("application.properties");
-        ICsvStorageConfig csvStorageConfig = new CsvStorageConfig(configReader);
-        IDiseaseFastaStorageConfig diseaseFastaStorageConfig = new DiseaseFastaStorageConfig(configReader);
-        IDiagnosticStorageConfig diagnosticStorageConfig = new DiagnosticStorageConfig(configReader);
+        IPatientStorageConfig csvStorageConfig = new CSVPatientStorageConfig(configReader);
+        IDiseaseStorageConfig diseaseFastaStorageConfig = new DiseaseFastaStorageConfig(configReader);
+        IDiagnosticStorageConfig diagnosticStorageConfig = new CSVDiagnosticStorageConfig(configReader);
         ISSLConfig sslConfig = new TCPConfig(configReader);
         IntegrityVerifier integrityVerifier = new SHA256IntegrityVerifier();
         ProcessingPolicy policy = getPolicy(csvStorageConfig, diseaseFastaStorageConfig, diagnosticStorageConfig, integrityVerifier);
@@ -62,8 +61,8 @@ public class Main {
      * contiene los procesadores de mensajes configurados para manejar las solicitudes entrantes.
      */
     private static ProcessingPolicy getPolicy(
-            ICsvStorageConfig csvStorageConfig,
-            IDiseaseFastaStorageConfig diseaseFastaStorageConfig,
+            IPatientStorageConfig csvStorageConfig,
+            IDiseaseStorageConfig diseaseFastaStorageConfig,
             IDiagnosticStorageConfig diagnosticStorageConfig,
             IntegrityVerifier integrityVerifier
     ) {

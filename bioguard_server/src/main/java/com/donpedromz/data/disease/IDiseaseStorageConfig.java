@@ -5,7 +5,7 @@ package com.donpedromz.data.disease;
  * @version 1.0
  * Interfaz que representa la configuración necesaria para el almacenamiento de datos de enfermedades en formato FASTA.
  */
-public interface IDiseaseFastaStorageConfig {
+public interface IDiseaseStorageConfig {
     /**
      * Obtiene la ruta del directorio donde se almacenan los archivos FASTA
      * que contienen la información de las enfermedades.
