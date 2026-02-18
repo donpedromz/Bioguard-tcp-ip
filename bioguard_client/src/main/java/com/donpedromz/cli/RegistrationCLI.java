@@ -1,9 +1,10 @@
 package com.donpedromz.cli;
 
+import com.donpedromz.domain.diagnostic.DiagnosticRegistration;
 import com.donpedromz.domain.disease.DiseaseRegistration;
 import com.donpedromz.domain.patient.PatientRegistration;
-import com.donpedromz.fasta.file.FastaFileScanner;
-import com.donpedromz.fasta.file.FastaScanItem;
+import com.donpedromz.fasta.file.FileScanner;
+import com.donpedromz.fasta.file.ScanItem;
 import com.donpedromz.fasta.file.FastaScanException;
 import com.donpedromz.network.TCPClientException;
 import com.donpedromz.service.RegistrationClient;
@@ -11,14 +12,13 @@ import com.donpedromz.service.RegistrationClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.function.Function;
 
 /**
  * @version 1.0
  * @author juanp
  * Interfaz de línea de comandos para registrar pacientes, enfermedades y generar diagnósticos en el sistema BioGuard.
  */
-public class RegistrationCli {
+public class RegistrationCLI {
     /**
      * Cliente utilizado para comunicarse con el servidor BioGuard y realizar las operaciones de registro y diagnóstico.
      */
@@ -28,11 +28,11 @@ public class RegistrationCli {
      * Scanner que localiza archivos FASTA válidos para el registro de enfermedades.
      * Cada archivo debe contener la información necesaria para crear una entidad DiseaseRegistration.
      */
-    private final FastaFileScanner<DiseaseRegistration> diseaseScanner;
+    private final FileScanner<DiseaseRegistration> diseaseScanner;
     /**
      * Scanner que localiza archivos FASTA válidos para la generación de diagnósticos.
      */
-    private final FastaFileScanner<String> diagnosticScanner;
+    private final FileScanner<DiagnosticRegistration> diagnosticScanner;
 
     /**
      * Constructor de la CLI de registro.
@@ -41,10 +41,10 @@ public class RegistrationCli {
      * @param diseaseScanner scanner que localiza archivos FASTA válidos para el registro de enfermedades.
      * @param diagnosticScanner scanner que localiza archivos FASTA válidos para la generación de diagnósticos.
      */
-    public RegistrationCli(
+    public RegistrationCLI(
             RegistrationClient registrationClient,
-            FastaFileScanner<DiseaseRegistration> diseaseScanner,
-            FastaFileScanner<String> diagnosticScanner
+            FileScanner<DiseaseRegistration> diseaseScanner,
+            FileScanner<DiagnosticRegistration> diagnosticScanner
     ) {
         this.registrationClient = registrationClient;
         this.diseaseScanner = diseaseScanner;
@@ -84,16 +84,19 @@ public class RegistrationCli {
     private void generateDiagnostic(Scanner scanner) {
         try {
             String inputPath = prompt(scanner, "Ruta del archivo o carpeta con muestras FASTA");
-            List<FastaScanItem<String>> candidates = diagnosticScanner.scan(inputPath);
+            List<ScanItem<DiagnosticRegistration>> candidates = diagnosticScanner.scan(inputPath);
             if (candidates.isEmpty()) {
                 System.out.println("No se encontraron muestras FASTA válidas en la ruta proporcionada.");
                 return;
             }
 
-            FastaScanItem<String> candidate = selectCandidate(
-                    scanner, candidates, FastaScanItem::getFileName,
-                    "Se encontraron múltiples muestras FASTA válidas. Selecciona una:"
-            );
+            List<String> labels = new ArrayList<>();
+            for (ScanItem<DiagnosticRegistration> c : candidates) {
+                labels.add(c.getFileName());
+            }
+            int index = selectFromCandidates(scanner, labels,
+                    "Se encontraron múltiples muestras FASTA válidas. Selecciona una:");
+            ScanItem<DiagnosticRegistration> candidate = candidates.get(index);
             String response = registrationClient.generateDiagnostic(candidate.getPayload());
             System.out.println("Respuesta del servidor: " + response);
         } catch (FastaScanException | IllegalArgumentException | TCPClientException ex) {
@@ -134,46 +137,24 @@ public class RegistrationCli {
     private void registerVirus(Scanner scanner) {
         try {
             String inputPath = prompt(scanner, "Ruta del archivo o carpeta con archivos FASTA");
-            List<FastaScanItem<DiseaseRegistration>> candidates = diseaseScanner.scan(inputPath);
+            List<ScanItem<DiseaseRegistration>> candidates = diseaseScanner.scan(inputPath);
             if (candidates.isEmpty()) {
                 System.out.println("No se encontraron archivos FASTA válidos en la ruta proporcionada.");
                 return;
             }
 
-            FastaScanItem<DiseaseRegistration> candidate = selectCandidate(
-                    scanner, candidates,
-                    c -> c.getFileName() + " (" + c.getPayload().getInfectiousnessLevel() + ")",
-                    "Se encontraron múltiples archivos FASTA válidos. Selecciona uno:"
-            );
+            List<String> labels = new ArrayList<>();
+            for (ScanItem<DiseaseRegistration> c : candidates) {
+                labels.add(c.getFileName() + " (" + c.getPayload().getInfectiousnessLevel() + ")");
+            }
+            int index = selectFromCandidates(scanner, labels,
+                    "Se encontraron múltiples archivos FASTA válidos. Selecciona uno:");
+            ScanItem<DiseaseRegistration> candidate = candidates.get(index);
             String response = registrationClient.registerDisease(candidate.getPayload());
             System.out.println("Respuesta del servidor: " + response);
         } catch (FastaScanException | IllegalArgumentException | TCPClientException ex) {
             System.out.println("No fue posible registrar la enfermedad: " + ex.getMessage());
         }
-    }
-
-    /**
-     * Permite al usuario seleccionar un archivo FASTA candidato cuando se encuentran múltiples archivos válidos.
-     *
-     * @param scanner scanner utilizado para leer la entrada del usuario
-     * @param candidates lista de archivos FASTA candidatos válidos encontrados
-     * @param labelMapper función que transforma cada candidato en una etiqueta descriptiva
-     * @param headerMessage mensaje de encabezado que se muestra antes de las opciones
-     * @param <T> tipo del payload del candidato
-     * @return el candidato seleccionado por el usuario
-     */
-    private <T> FastaScanItem<T> selectCandidate(
-            Scanner scanner,
-            List<FastaScanItem<T>> candidates,
-            Function<FastaScanItem<T>, String> labelMapper,
-            String headerMessage
-    ) {
-        List<String> labels = new ArrayList<>();
-        for (FastaScanItem<T> candidate : candidates) {
-            labels.add(labelMapper.apply(candidate));
-        }
-        int index = selectFromCandidates(scanner, labels, headerMessage);
-        return candidates.get(index);
     }
 
     /**

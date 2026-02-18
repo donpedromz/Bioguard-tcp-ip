@@ -1,6 +1,6 @@
 package com.donpedromz.network;
 
-import com.donpedromz.config.ISSLConfig;
+import com.donpedromz.network.config.ISSLConfig;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;

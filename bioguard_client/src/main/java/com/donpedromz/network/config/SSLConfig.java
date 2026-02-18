@@ -1,4 +1,4 @@
-package com.donpedromz.config;
+package com.donpedromz.network.config;
 
 import com.donpedromz.common.IConfigReader;
 
@@ -8,7 +8,7 @@ import com.donpedromz.common.IConfigReader;
  * Implementación de la configuración de red del cliente,
  * que adapta un lector de configuraciones genérico a la interfaz específica de SSL.
  */
-public class ClientNetworkConfig implements ISSLConfig {
+public class SSLConfig implements ISSLConfig {
     /**
      * Clave de configuración para el host del servidor.
      */
@@ -36,7 +36,7 @@ public class ClientNetworkConfig implements ISSLConfig {
      * Crea una nueva instancia de ClientNetworkConfig utilizando el lector de configuraciones proporcionado.
      * @param configReader reader that provides typed configuration values
      */
-    public ClientNetworkConfig(IConfigReader configReader) {
+    public SSLConfig(IConfigReader configReader) {
         this.configReader = configReader;
     }
 

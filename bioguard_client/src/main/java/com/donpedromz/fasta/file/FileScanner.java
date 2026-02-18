@@ -15,7 +15,7 @@ import java.util.Locale;
  * Clase abstracta que proporciona la funcionalidad para escanear archivos FASTA desde una ruta dada,
  * @param <T> el tipo de entidad que se mapeará a partir del contenido de los archivos FASTA,
  */
-public abstract class FastaFileScanner<T> {
+public abstract class FileScanner<T> {
     /**
      * Constante que define la extensión de los archivos FASTA, utilizada para filtrar los archivos a escanear.
      */
@@ -76,14 +76,14 @@ public abstract class FastaFileScanner<T> {
      * @param inputPath ruta de un archivo FASTA o un directorio que contenga archivos FASTA
      * @return lista de FastaScanItem con el nombre del archivo (sin extensión) y la entidad mapeada
      */
-    public List<FastaScanItem<T>> scan(String inputPath) {
+    public List<ScanItem<T>> scan(String inputPath) {
         Path root = resolvePath(inputPath);
         List<Path> fastaFiles = collectFastaFiles(root);
         if (fastaFiles.isEmpty()) {
             throw new FastaScanException("No se encontraron archivos con extensión .fasta en la ruta indicada.");
         }
 
-        List<FastaScanItem<T>> entities = new ArrayList<>();
+        List<ScanItem<T>> entities = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         for (Path file : fastaFiles) {
@@ -96,7 +96,7 @@ public abstract class FastaFileScanner<T> {
                 }
                 String normalizedFileName = removeFastaExtension(file.getFileName().toString());
                 for (T item : mapped) {
-                    entities.add(new FastaScanItem<>(normalizedFileName, item));
+                    entities.add(new ScanItem<>(normalizedFileName, item));
                 }
             } catch (FastaScanException exception) {
                 errors.add(file.getFileName() + ": " + exception.getMessage());

@@ -1,4 +1,4 @@
-package com.donpedromz.config;
+package com.donpedromz.network.config;
 
 /**
  * @version 1.0

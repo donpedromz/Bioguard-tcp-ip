@@ -1,5 +1,7 @@
 package com.donpedromz.fasta.file;
 
+import com.donpedromz.domain.diagnostic.DiagnosticRegistration;
+
 import java.util.List;
 
 /**
@@ -9,14 +11,14 @@ import java.util.List;
  * asegurándose de que el formato del encabezado y la secuencia sean correctos,
  * y proporcionando mensajes de error claros en caso de que el formato no sea válido.
  */
-public class DiagnosticScanner extends FastaFileScanner<String> {
+public class DiagnosticScanner extends FileScanner<DiagnosticRegistration> {
     /**
      * {@inheritDoc}
      * @param content
      * @return
      */
     @Override
-    protected List<String> mapFileContent(String content) {
+    protected List<DiagnosticRegistration> mapFileContent(String content) {
         List<String> lines = getLines(content);
         if (lines.size() != 2) {
             throw new FastaScanException("El archivo FASTA de muestra debe tener exactamente 2 líneas.");
@@ -34,6 +36,6 @@ public class DiagnosticScanner extends FastaFileScanner<String> {
         if (sequence.isEmpty()) {
             throw new FastaScanException("La secuencia FASTA no puede estar vacía.");
         }
-        return List.of(">" + document + "|" + date + System.lineSeparator() + sequence);
+        return List.of(new DiagnosticRegistration(document, date, sequence));
     }
 }

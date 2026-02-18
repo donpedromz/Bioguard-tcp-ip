@@ -7,7 +7,7 @@ import com.donpedromz.domain.patient.PatientRegistration;
  * @author juanp
  * Implementación de FastaMessageBuilder para construir mensajes FASTA a partir de registros de pacientes.
  */
-public class PatientFastaMessageBuilder implements FastaMessageBuilder<PatientRegistration> {
+public class PatientFastaMessageBuilder implements MessageBuilder<PatientRegistration> {
     /**
      * Plantilla para el encabezado FASTA,
      * donde cada %s o %d se reemplazará por los campos correspondientes del registro del paciente,

@@ -10,7 +10,7 @@ import java.util.List;
  * Clase que extiende FastaFileScanner para mapear el contenido de un archivo FASTA a un objeto DiseaseRegistration,
  * asegurándose de que el formato del encabezado sea correcto y que la secuencia genética esté presente y no esté vacía.
  */
-public class DiseaseScanner extends FastaFileScanner<DiseaseRegistration> {
+public class DiseaseScanner extends FileScanner<DiseaseRegistration> {
     /**
      * {@inheritDoc}
      * @param content

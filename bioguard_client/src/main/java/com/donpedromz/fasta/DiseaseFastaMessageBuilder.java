@@ -11,7 +11,7 @@ import java.util.Locale;
  * formateando el encabezado con el nombre de la enfermedad y su nivel de contagiosidad,
  * y asegurándose de que la secuencia genética esté en mayúsculas y sin espacios.
  */
-public class DiseaseFastaMessageBuilder implements FastaMessageBuilder<DiseaseRegistration> {
+public class DiseaseFastaMessageBuilder implements MessageBuilder<DiseaseRegistration> {
     /**
      * Plantilla para el encabezado FASTA,
      * donde %s se reemplazará por el nombre de la enfermedad y su nivel de contagiosidad.

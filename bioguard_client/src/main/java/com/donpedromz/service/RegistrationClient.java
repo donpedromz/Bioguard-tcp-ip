@@ -1,5 +1,6 @@
 package com.donpedromz.service;
 
+import com.donpedromz.domain.diagnostic.DiagnosticRegistration;
 import com.donpedromz.domain.disease.DiseaseRegistration;
 import com.donpedromz.domain.patient.PatientRegistration;
 
@@ -29,8 +30,8 @@ public interface RegistrationClient {
     /**
      * Envía una solicitud para generar un diagnóstico al servidor,
      * utilizando un mensaje en formato FASTA que contiene información relevante sobre el paciente y sus síntomas.
-     * @param fastaSampleMessage un mensaje en formato FASTA que se utiliza como entrada para generar un diagnóstico.
+     * @param diagnosticRegistration registro del diagnóstico que se desea enviar al servidor.
      * @return un String que representa la respuesta textual devuelta por el servidor.
      */
-    String generateDiagnostic(String fastaSampleMessage);
+    String generateDiagnostic(DiagnosticRegistration diagnosticRegistration);
 }

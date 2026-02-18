@@ -1,8 +1,9 @@
 package com.donpedromz.service;
 
+import com.donpedromz.domain.diagnostic.DiagnosticRegistration;
 import com.donpedromz.domain.disease.DiseaseRegistration;
 import com.donpedromz.domain.patient.PatientRegistration;
-import com.donpedromz.fasta.FastaMessageBuilder;
+import com.donpedromz.fasta.MessageBuilder;
 import com.donpedromz.network.TCPClient;
 
 /**
@@ -10,7 +11,7 @@ import com.donpedromz.network.TCPClient;
  * @author juanp
  * Implementación de RegistrationClient que utiliza un TCPClient para enviar mensajes al servidor.
  */
-public class TcpRegistrationClient implements RegistrationClient {
+public class TCPRegistrationClient implements RegistrationClient {
     /**
      * Cliente TCP utilizado para enviar mensajes al servidor.
      */
@@ -18,26 +19,33 @@ public class TcpRegistrationClient implements RegistrationClient {
     /**
      * Builder que transforma registros de pacientes en mensajes FASTA.
      */
-    private final FastaMessageBuilder<PatientRegistration> patientBuilder;
+    private final MessageBuilder<PatientRegistration> patientBuilder;
     /**
      * Builder que transforma registros de enfermedades en mensajes FASTA.
      */
-    private final FastaMessageBuilder<DiseaseRegistration> diseaseBuilder;
+    private final MessageBuilder<DiseaseRegistration> diseaseBuilder;
+    /**
+     * Builder que transforma registros de diagnósticos en mensajes FASTA.
+     */
+    private final MessageBuilder<DiagnosticRegistration> diagnosticBuilder;
 
     /**
      * Constructor que inyecta las dependencias necesarias para enviar mensajes al servidor.
      * @param tcpClient cliente TCP que se utilizará para enviar mensajes al servidor,
      * @param patientBuilder builder que se encargará de convertir los registros de pacientes en mensajes FASTA,
      * @param diseaseBuilder builder que se encargará de convertir los registros de enfermedades en mensajes FASTA.
+     * @param diagnosticBuilder builder que se encargará de convertir los registros de diagnósticos en mensajes FASTA.
      */
-    public TcpRegistrationClient(
+    public TCPRegistrationClient(
             TCPClient tcpClient,
-            FastaMessageBuilder<PatientRegistration> patientBuilder,
-            FastaMessageBuilder<DiseaseRegistration> diseaseBuilder
+            MessageBuilder<PatientRegistration> patientBuilder,
+            MessageBuilder<DiseaseRegistration> diseaseBuilder,
+            MessageBuilder<DiagnosticRegistration> diagnosticBuilder
     ) {
         this.tcpClient = tcpClient;
         this.patientBuilder = patientBuilder;
         this.diseaseBuilder = diseaseBuilder;
+        this.diagnosticBuilder = diagnosticBuilder;
     }
 
     /**
@@ -68,21 +76,15 @@ public class TcpRegistrationClient implements RegistrationClient {
     }
 
     /**
-     * Envía una solicitud para generar un diagnóstico al servidor, utilizando un mensaje en formato
-     * FASTA que contiene información relevante sobre el paciente y sus síntomas.
-     * @param fastaSampleMessage un mensaje en formato FASTA que se utiliza como entrada para generar un diagnóstico.
+     * Envía una solicitud para generar un diagnóstico al servidor, utilizando el builder configurado para
+     * convertir el registro del diagnóstico en un mensaje FASTA antes de enviarlo.
+     * @param diagnosticRegistration registro del diagnóstico que se desea enviar al servidor.
      * @return un String que representa la respuesta textual devuelta por
-     * el servidor después de procesar la solicitud para generar un diagnóstico,
+     * el servidor después de procesar la solicitud para generar un diagnóstico.
      */
     @Override
-    public String generateDiagnostic(String fastaSampleMessage) {
-        if (fastaSampleMessage == null) {
-            throw new IllegalArgumentException("fastaSampleMessage is required");
-        }
-        String payload = fastaSampleMessage.trim();
-        if (payload.isEmpty()) {
-            throw new IllegalArgumentException("fastaSampleMessage cannot be blank");
-        }
+    public String generateDiagnostic(DiagnosticRegistration diagnosticRegistration) {
+        String payload = diagnosticBuilder.build(diagnosticRegistration);
         return tcpClient.send(payload);
     }
 }

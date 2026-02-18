@@ -2,8 +2,8 @@ package com.donpedromz.test;
 
 import com.donpedromz.common.IConfigReader;
 import com.donpedromz.common.PropertiesManager;
-import com.donpedromz.config.ClientNetworkConfig;
-import com.donpedromz.config.ISSLConfig;
+import com.donpedromz.network.config.SSLConfig;
+import com.donpedromz.network.config.ISSLConfig;
 import com.donpedromz.network.SSLTCPClient;
 import com.donpedromz.network.TCPClient;
 
@@ -23,7 +23,7 @@ public class ConcurrencyTest {
 
     public static void main(String[] args) {
         IConfigReader configReader = new PropertiesManager("application.properties");
-        ISSLConfig clientConfig = new ClientNetworkConfig(configReader);
+        ISSLConfig clientConfig = new SSLConfig(configReader);
         TCPClient tcpClient = new SSLTCPClient(clientConfig);
         System.out.println("Prueba de concurrencia con " + THREAD_COUNT + " hilos");
         System.out.println();

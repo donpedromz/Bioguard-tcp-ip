@@ -9,10 +9,10 @@ package com.donpedromz.fasta.file;
  * @param <T> el tipo de payload que se desea asociar con el ítem de escaneo, puede ser cualquier clase o estructura de
  *           datos que se necesite para almacenar información adicional sobre el proceso de escaneo de archivos FASTA.
  */
-public class FastaScanItem<T> {
+public class ScanItem<T> {
     private final String fileName;
     private final T payload;
-    public FastaScanItem(String fileName, T payload) {
+    public ScanItem(String fileName, T payload) {
         if (fileName == null || fileName.isBlank()) {
             throw new IllegalArgumentException("fileName is required");
         }

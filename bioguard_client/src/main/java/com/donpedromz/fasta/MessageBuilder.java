@@ -7,7 +7,7 @@ package com.donpedromz.fasta;
  * @param <T> el tipo de payload
  *           que se desea convertir en un mensaje FASTA, puede ser cualquier clase o estructura de datos
  */
-public interface FastaMessageBuilder<T> {
+public interface MessageBuilder<T> {
     /**
      * Construye un mensaje en formato FASTA a partir del payload proporcionado.
      * @param payload el objeto de tipo T que contiene la información necesaria para construir el mensaje FASTA,
