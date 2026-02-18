@@ -21,13 +21,16 @@ public interface IDiagnosticRepository {
 
 	/**
 	 * Verifica si existe un diagnóstico en el repositorio para un paciente específico
-	 * y un mensaje FASTA original dado.
+	 * y una combinación de secuencia genética y fecha de muestra.
+	 * Una muestra se considera duplicada solo si tanto la secuencia como la fecha coinciden.
 	 * @param patientUuid El UUID del paciente para el cual se desea verificar la existencia del diagnóstico.
 	 *                       No debe ser null.
-	 * @param sampleSequence El mensaje FASTA original asociado al diagnóstico que se desea verificar.
-	 *                                No debe ser null ni vacío.
-	 * @return {@code true} si existe un diagnóstico para el paciente y mensaje FASTA original proporcionados,
+	 * @param sampleSequence La secuencia genética de la muestra que se desea verificar.
+	 *                                No debe ser null ni vacía.
+	 * @param sampleDate La fecha de la muestra en formato YYYY-MM-DD. No debe ser null ni vacía.
+	 * @param patientDocument El documento del paciente. No debe ser null ni vacío.
+	 * @return {@code true} si existe un diagnóstico para el paciente con la misma secuencia y fecha,
 	 * {@code false} en caso contrario.
 	 */
-	boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence);
+	boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence, String sampleDate, String patientDocument);
 }

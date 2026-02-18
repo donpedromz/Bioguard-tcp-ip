@@ -113,7 +113,9 @@ public class CSVPatientDiagnosticHistoryRepository implements IDiagnosticHistory
                 List<String[]> historyDataRows = new ArrayList<>();
 
                 String currentSequence = diagnostic.getSampleSequence();
-                String currentHash = integrityVerifier.computeHash(currentSequence);
+                String canonicalContent = ">" + patient.getPatientDocument() + "|" + diagnostic.getSampleDate()
+                        + System.lineSeparator() + currentSequence;
+                String currentHash = integrityVerifier.computeHash(canonicalContent);
                 int previousSamplesCount = 0;
 
                 for (Path previousSamplePath : listSampleFiles(samplesDirectory)) {

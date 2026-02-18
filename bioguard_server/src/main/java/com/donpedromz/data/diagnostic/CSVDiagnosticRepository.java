@@ -123,14 +123,18 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
                 Files.createDirectories(generatedDiagnosticsDirectory);
 
                 String sampleSequence = entity.getSampleSequence();
-                String sampleHash = integrityVerifier.computeHash(sampleSequence);
+                String canonicalContent = buildCanonicalSampleContent(
+                        entity.getPatient().getPatientDocument(),
+                        entity.getSampleDate(),
+                        sampleSequence);
+                String sampleHash = integrityVerifier.computeHash(canonicalContent);
                 Path samplePath = samplesDirectory.resolve(sampleHash + FASTA_EXTENSION);
                 if (Files.exists(samplePath)) {
                     throw new ConflictException("No se puede generar diagnóstico: la muestra ya fue registrada previamente para este paciente.");
                 }
                 Files.writeString(
                         samplePath,
-                        sampleSequence,
+                        canonicalContent,
                         StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE_NEW
                 );
@@ -178,15 +182,20 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
         return csvRows;
     }
     /**
-     * Verifica si ya existe una muestra registrada para el paciente con el mismo hash SHA-256.
+     * Verifica si ya existe una muestra registrada para el paciente con la misma secuencia y fecha.
+     * Una muestra se considera duplicada solo si tanto la secuencia genética como la fecha coinciden.
      * @param patientUuid UUID del paciente
-     * @param sampleSequence mensaje FASTA original de la muestra
-     * @return {@code true} si ya existe una muestra idéntica para ese paciente
+     * @param sampleSequence secuencia genética de la muestra
+     * @param sampleDate fecha de la muestra en formato YYYY-MM-DD
+     * @param patientDocument documento del paciente
+     * @return {@code true} si ya existe una muestra con la misma secuencia y fecha para ese paciente
      */
     @Override
-    public boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence) {
+    public boolean existsByPatientAndSample(UUID patientUuid, String sampleSequence, String sampleDate, String patientDocument) {
         synchronized (GLOBAL_LOCK) {
-            if (patientUuid == null || sampleSequence == null || sampleSequence.isBlank()) {
+            if (patientUuid == null || sampleSequence == null || sampleSequence.isBlank()
+                    || sampleDate == null || sampleDate.isBlank()
+                    || patientDocument == null || patientDocument.isBlank()) {
                 return false;
             }
 
@@ -198,7 +207,8 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
                 return false;
             }
 
-            String sampleHash = integrityVerifier.computeHash(sampleSequence);
+            String canonicalContent = buildCanonicalSampleContent(patientDocument, sampleDate, sampleSequence);
+            String sampleHash = integrityVerifier.computeHash(canonicalContent);
             Path samplePath = samplesDirectory.resolve(sampleHash + FASTA_EXTENSION);
 
             if (Files.exists(samplePath) && Files.isRegularFile(samplePath)) {
@@ -212,6 +222,18 @@ public class CSVDiagnosticRepository implements IDiagnosticRepository {
             }
             return false;
         }
+    }
+
+    /**
+     * Construye el contenido canónico de una muestra FASTA para hashing y almacenamiento.
+     * El formato incluye la fecha para que muestras con diferente fecha generen hashes distintos.
+     * @param patientDocument documento del paciente
+     * @param sampleDate fecha de la muestra
+     * @param sampleSequence secuencia genética de la muestra
+     * @return contenido canónico en formato FASTA: {@code >documento|fecha\nSECUENCIA}
+     */
+    private String buildCanonicalSampleContent(String patientDocument, String sampleDate, String sampleSequence) {
+        return ">" + patientDocument + "|" + sampleDate + System.lineSeparator() + sampleSequence;
     }
 
     /**

@@ -9,6 +9,7 @@ import com.donpedromz.data.diagnostic.IDiagnosticHistoryRepository;
 import com.donpedromz.data.diagnostic.IHighInfectivityPatientReportRepository;
 import com.donpedromz.data.diagnostic.IDiagnosticRepository;
 import com.donpedromz.data.disease.IDiseaseRepository;
+import com.donpedromz.data.exceptions.ConflictException;
 import com.donpedromz.data.exceptions.CorruptedDataException;
 import com.donpedromz.data.exceptions.NotFoundException;
 import com.donpedromz.data.patient.IPatientRepository;
@@ -216,7 +217,11 @@ public class FASTADiagnose implements IMessageProcessor {
             if (patient.getUuid() == null) {
                 throw new NotFoundException("no se encontró UUID para el paciente del documento enviado");
             }
-            if (diagnosticRepository.existsByPatientAndSample(patient.getUuid(), diagnoseMessage.geneticSequence())) {
+            if (diagnosticRepository.existsByPatientAndSample(
+                    patient.getUuid(),
+                    diagnoseMessage.geneticSequence(),
+                    diagnoseMessage.sampleDate(),
+                    diagnoseMessage.patientDocument())) {
                 return DUPLICATE_SAMPLE_MESSAGE;
             }
             List<Disease> diseases = diseaseRepository.findAll();
@@ -253,6 +258,9 @@ public class FASTADiagnose implements IMessageProcessor {
             return response;
         } catch (InvalidMessageFormatException e) {
             throw e;
+        } catch (ConflictException conflictException) {
+            System.out.println(DUPLICATE_SAMPLE_MESSAGE);
+            return DUPLICATE_SAMPLE_MESSAGE;
         } catch (CorruptedDataException corruptedException) {
             System.out.println("[TCP][CorruptedData] " + corruptedException.getMessage());
             return "[TCP][Error] Error interno al procesar los datos del paciente";
