@@ -1,106 +1,119 @@
 package com.donpedromz;
-import com.donpedromz.business.FASTA.FASTADiagnose;
-import com.donpedromz.business.FASTA.FASTADiseaseRegister;
-import com.donpedromz.business.FASTA.FASTAPatientRegister;
-import com.donpedromz.business.FASTA.FASTAProcessor;
-import com.donpedromz.business.IMessageProcessor;
-import com.donpedromz.business.ProcessingPolicy;
+import com.donpedromz.controllers.DiagnoseController;
+import com.donpedromz.controllers.DiseaseRegisterController;
+
+import com.donpedromz.controllers.PatientRegisterController;import com.donpedromz.dtos.DiagnoseMessageDto;
+import com.donpedromz.format.factory.DiagnosticParserFactory;
+import com.donpedromz.format.factory.DiseaseParserFactory;
+import com.donpedromz.format.factory.ParserFactory;
+import com.donpedromz.format.factory.PatientParserFactory;
+import com.donpedromz.controllers.IMessageProcessor;
+import com.donpedromz.service.DiagnoseService;
+import com.donpedromz.service.DiseaseService;
+import com.donpedromz.service.IDiagnoseService;
+import com.donpedromz.service.IDiseaseService;
+import com.donpedromz.service.IPatientService;
+import com.donpedromz.service.PatientService;
 import com.donpedromz.common.IConfigReader;
 import com.donpedromz.common.PropertiesManager;
-import com.donpedromz.data.IntegrityVerifier;
-import com.donpedromz.data.SHA256IntegrityVerifier;
-import com.donpedromz.data.diagnostic.CSVHighInfectivityPatientReportRepository;
-import com.donpedromz.data.diagnostic.CSVPatientDiagnosticHistoryRepository;
-import com.donpedromz.data.diagnostic.CSVDiagnosticRepository;
-import com.donpedromz.data.diagnostic.IDiagnosticHistoryRepository;
-import com.donpedromz.data.diagnostic.IHighInfectivityPatientReportRepository;
-import com.donpedromz.data.diagnostic.IDiagnosticRepository;
-import com.donpedromz.data.diagnostic.IDiagnosticStorageConfig;
-import com.donpedromz.data.diagnostic.properties.CSVDiagnosticStorageConfig;
-import com.donpedromz.data.disease.FastaDiseaseRepository;
-import com.donpedromz.data.disease.IDiseaseStorageConfig;
-import com.donpedromz.data.disease.IDiseaseRepository;
-import com.donpedromz.data.disease.properties.DiseaseFastaStorageConfig;
-import com.donpedromz.data.patient.CSVPatientRepository;
-import com.donpedromz.data.patient.IPatientStorageConfig;
-import com.donpedromz.data.patient.IPatientRepository;
-import com.donpedromz.data.patient.properties.CSVPatientStorageConfig;
-import com.donpedromz.network.INetworkService;
-import com.donpedromz.network.ISSLConfig;
-import com.donpedromz.network.SSLTCPServer;
-import com.donpedromz.network.TCPConfig;
+import com.donpedromz.infrastructure.integrity.IntegrityVerifier;
+import com.donpedromz.infrastructure.integrity.SHA256IntegrityVerifier;
+import com.donpedromz.infrastructure.persistence.csv.CSVHighInfectivityPatientReportRepository;
+import com.donpedromz.infrastructure.persistence.csv.CSVPatientDiagnosticHistoryRepository;
+import com.donpedromz.infrastructure.persistence.csv.CSVDiagnosticRepository;
+import com.donpedromz.repositories.diagnostic.IDiagnosticHistoryRepository;
+import com.donpedromz.repositories.diagnostic.IHighInfectivityPatientReportRepository;
+import com.donpedromz.repositories.diagnostic.IDiagnosticRepository;
+import com.donpedromz.repositories.diagnostic.properties.IDiagnosticStorageConfig;
+import com.donpedromz.infrastructure.persistence.config.CSVDiagnosticStorageConfig;
+import com.donpedromz.infrastructure.persistence.fasta.FastaDiseaseRepository;
+import com.donpedromz.repositories.disease.properties.IDiseaseStorageConfig;
+import com.donpedromz.repositories.disease.IDiseaseRepository;
+import com.donpedromz.infrastructure.persistence.config.DiseaseFastaStorageConfig;
+import com.donpedromz.infrastructure.persistence.csv.CSVPatientRepository;
+import com.donpedromz.repositories.patient.properties.IPatientStorageConfig;
+import com.donpedromz.repositories.patient.IPatientRepository;
+import com.donpedromz.infrastructure.persistence.config.CSVPatientStorageConfig;
+import com.donpedromz.model.Disease;
+import com.donpedromz.model.Patient;
+import com.donpedromz.infrastructure.network.INetworkService;
+import com.donpedromz.infrastructure.network.ISSLConfig;
+import com.donpedromz.infrastructure.network.SSLTCPServer;
+import com.donpedromz.infrastructure.network.TCPConfig;
+import com.donpedromz.infrastructure.network.routing.FastaRouter;
+import com.donpedromz.infrastructure.network.routing.MessageRouter;
 
-import java.util.List;
+import java.util.HashMap;
 
 /**
  * @author juanp
- * @version 1.0
- * Clase principal que inicia la aplicación BioGuard. Configura las dependencias necesarias,
- * como los repositorios de datos, los procesadores de mensajes y el servicio de red,
- * y luego inicia el servidor TCP con SSL para escuchar las solicitudes entrantes.
+ * @version 2.0
+ * Clase principal que inicia la aplicación BioGuard.
+ * Configura la inyección de dependencias siguiendo el patrón MVC:
+ * Repositories → Services → Controllers → Router → Server.
  */
 public class Main {
     public static void main(String[] args) {
+        /**
+         * Configuración de dependencias y arranque del servidor .
+          * Se configuran los repositorios de pacientes, enfermedades y diagnósticos,
+         */
         IConfigReader configReader = new PropertiesManager("application.properties");
         IPatientStorageConfig csvStorageConfig = new CSVPatientStorageConfig(configReader);
         IDiseaseStorageConfig diseaseFastaStorageConfig = new DiseaseFastaStorageConfig(configReader);
         IDiagnosticStorageConfig diagnosticStorageConfig = new CSVDiagnosticStorageConfig(configReader);
         ISSLConfig sslConfig = new TCPConfig(configReader);
         IntegrityVerifier integrityVerifier = new SHA256IntegrityVerifier();
-        ProcessingPolicy policy = getPolicy(csvStorageConfig, diseaseFastaStorageConfig, diagnosticStorageConfig, integrityVerifier);
-        INetworkService server = new SSLTCPServer(sslConfig, policy);
-        server.start();
-    }
-
-    /**
-     * Construye la política de procesamiento para la aplicación, creando los repositorios de datos necesarios
-     * @param csvStorageConfig Configuración para el almacenamiento de datos de pacientes en formato CSV
-     * @param diseaseFastaStorageConfig Configuración para el almacenamiento de datos de enfermedades en formato FASTA
-     * @param diagnosticStorageConfig Configuración para el almacenamiento de datos de diagnósticos en formato CSV
-     * @return Una instancia de ProcessingPolicy que
-     * contiene los procesadores de mensajes configurados para manejar las solicitudes entrantes.
-     */
-    private static ProcessingPolicy getPolicy(
-            IPatientStorageConfig csvStorageConfig,
-            IDiseaseStorageConfig diseaseFastaStorageConfig,
-            IDiagnosticStorageConfig diagnosticStorageConfig,
-            IntegrityVerifier integrityVerifier
-    ) {
-        IDiseaseRepository diseaseRepository = new FastaDiseaseRepository(diseaseFastaStorageConfig, integrityVerifier);
+        /**
+         * Repositorios de datos, con sus respectivas configuraciones y dependencias inyectadas.
+         */
         IPatientRepository patientRepository = new CSVPatientRepository(csvStorageConfig);
-        IMessageProcessor diagnoseProcessor = getProcessor(diagnosticStorageConfig, patientRepository, diseaseRepository, integrityVerifier);
-        IMessageProcessor patientRegisterProcessor = new FASTAPatientRegister(patientRepository);
-        IMessageProcessor diseaseRegisterProcessor = new FASTADiseaseRegister(diseaseRepository);
-        return new FASTAProcessor(
-            List.of(diagnoseProcessor, patientRegisterProcessor, diseaseRegisterProcessor)
-        );
-    }
-
-    /**
-     * Construye el procesador de mensajes para manejar las solicitudes de diagnóstico,
-     * creando los repositorios de datos necesarios
-     * @param diagnosticStorageConfig Configuración para el almacenamiento de datos de diagnósticos en formato CSV,
-     *                                que se utiliza para crear los repositorios relacionados con los diagnósticos.
-     * @param patientRepository Repositorio de pacientes que se utiliza para acceder
-     *                          a la información de los pacientes durante el proceso de diagnóstico.
-     * @param diseaseRepository Repositorio de enfermedades que se utiliza para acceder a
-     *                          la información de las enfermedades durante el proceso de diagnóstico.
-     * @return Una instancia de IMessageProcessor que contiene
-     * el procesador de mensajes configurado para manejar las solicitudes de diagnóstico,
-     */
-    private static IMessageProcessor getProcessor(IDiagnosticStorageConfig diagnosticStorageConfig, IPatientRepository patientRepository, IDiseaseRepository diseaseRepository, IntegrityVerifier integrityVerifier) {
+        IDiseaseRepository diseaseRepository = new FastaDiseaseRepository(diseaseFastaStorageConfig, integrityVerifier);
         IDiagnosticRepository diagnosticRepository = new CSVDiagnosticRepository(diagnosticStorageConfig, integrityVerifier);
-        IHighInfectivityPatientReportRepository highInfectivityPatientReportRepository =
-            new CSVHighInfectivityPatientReportRepository(diagnosticStorageConfig);
+        IHighInfectivityPatientReportRepository highInfectivityReportRepository =
+                new CSVHighInfectivityPatientReportRepository(diagnosticStorageConfig);
         IDiagnosticHistoryRepository diagnosticHistoryRepository =
-            new CSVPatientDiagnosticHistoryRepository(diagnosticStorageConfig, integrityVerifier);
-        return
-                new FASTADiagnose(
+                new CSVPatientDiagnosticHistoryRepository(diagnosticStorageConfig, integrityVerifier);
+        /**
+         * Servicios de negocio, con los repositorios inyectados. Estos servicios implementan la lógica de negocio
+         */
+        IDiagnoseService diagnoseService = new DiagnoseService(
                 patientRepository,
                 diseaseRepository,
-            diagnosticRepository,
-            highInfectivityPatientReportRepository,
-            diagnosticHistoryRepository
+                diagnosticRepository,
+                highInfectivityReportRepository,
+                diagnosticHistoryRepository
         );
+        IPatientService patientService = new PatientService(patientRepository);
+        IDiseaseService diseaseService = new DiseaseService(diseaseRepository);
+        /**
+         * Factories de parsers para convertir el cuerpo de las solicitudes en objetos de dominio. 
+         * Estos parsers se inyectan en los controladores para separar la lógica de parsing de la lógica de negocio.
+         */
+        ParserFactory<DiagnoseMessageDto> diagnosticParserFactory = new DiagnosticParserFactory();
+        ParserFactory<Patient> patientParserFactory = new PatientParserFactory();
+        ParserFactory<Disease> diseaseParserFactory = new DiseaseParserFactory();
+        /**
+         * Controladores que procesan las solicitudes entrantes, 
+         * delegando la lógica de negocio a los servicios y utilizando los parsers para interpretar el contenido de las solicitudes.
+         */
+        IMessageProcessor diagnoseController = new DiagnoseController(diagnoseService, diagnosticParserFactory);
+        IMessageProcessor patientController = new PatientRegisterController(patientService, patientParserFactory);
+        IMessageProcessor diseaseController = new DiseaseRegisterController(diseaseService, diseaseParserFactory);
+        /**
+         * Router de mensajes que enruta las solicitudes entrantes a los controladores 
+         * correspondientes según el tipo de solicitud y acción.
+         */
+        HashMap<String, IMessageProcessor> routingTable = new HashMap<>();
+        routingTable.put("POST:diagnose", diagnoseController);
+        routingTable.put("POST:patient", patientController);
+        routingTable.put("POST:disease", diseaseController);
+        MessageRouter router = new FastaRouter(routingTable);
+        /**
+         * Servidor TCP con SSL que escucha las solicitudes entrantes, las enruta a través del router de mensajes
+         * y devuelve las respuestas generadas por los controladores. El servidor se inicia y queda a la espera de conexiones.
+         */
+        INetworkService server = new SSLTCPServer(sslConfig, router);
+        server.start();
     }
 }
