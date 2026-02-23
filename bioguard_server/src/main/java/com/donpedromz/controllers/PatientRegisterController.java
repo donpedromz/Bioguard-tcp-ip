@@ -5,8 +5,8 @@ import com.donpedromz.exceptions.DataValidationException;
 import com.donpedromz.exceptions.InvalidMessageFormatException;
 import com.donpedromz.service.IPatientService;
 import com.donpedromz.model.Patient;
-import com.donpedromz.infraestructure.network.data.Request;
-import com.donpedromz.infraestructure.network.data.Response;
+import com.donpedromz.infrastructure.network.data.Request;
+import com.donpedromz.infrastructure.network.data.Response;
 
 /**
  * @version 1.0

@@ -3,14 +3,14 @@ package com.donpedromz.controllers;
 import com.donpedromz.format.factory.ParserFactory;
 import com.donpedromz.exceptions.DataValidationException;
 import com.donpedromz.exceptions.InvalidMessageFormatException;
-import com.donpedromz.format.dto.DiagnoseMessageDto;
+import com.donpedromz.dtos.DiagnoseMessageDto;
 import com.donpedromz.service.IDiagnoseService;
-import com.donpedromz.service.dto.DiagnoseResult;
+import com.donpedromz.dtos.DiagnoseResult;
 import com.donpedromz.exceptions.ConflictException;
 import com.donpedromz.exceptions.CorruptedDataException;
 import com.donpedromz.exceptions.NotFoundException;
-import com.donpedromz.infraestructure.network.data.Request;
-import com.donpedromz.infraestructure.network.data.Response;
+import com.donpedromz.infrastructure.network.data.Request;
+import com.donpedromz.infrastructure.network.data.Response;
 
 /**
  * @version 1.0

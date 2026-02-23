@@ -1,6 +1,6 @@
 package com.donpedromz.format.parser;
 
-import com.donpedromz.format.dto.DiagnoseMessageDto;
+import com.donpedromz.dtos.DiagnoseMessageDto;
 import com.donpedromz.exceptions.InvalidFastaFormatException;
 
 import java.util.Locale;

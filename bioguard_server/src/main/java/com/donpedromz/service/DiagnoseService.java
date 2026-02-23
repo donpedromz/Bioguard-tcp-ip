@@ -1,8 +1,8 @@
 package com.donpedromz.service;
 
-import com.donpedromz.format.dto.DiagnoseMessageDto;
+import com.donpedromz.dtos.DiagnoseMessageDto;
 import com.donpedromz.exceptions.InvalidFastaFormatException;
-import com.donpedromz.service.dto.DiagnoseResult;
+import com.donpedromz.dtos.DiagnoseResult;
 import com.donpedromz.repositories.diagnostic.IDiagnosticHistoryRepository;
 import com.donpedromz.repositories.diagnostic.IHighInfectivityPatientReportRepository;
 import com.donpedromz.repositories.diagnostic.IDiagnosticRepository;

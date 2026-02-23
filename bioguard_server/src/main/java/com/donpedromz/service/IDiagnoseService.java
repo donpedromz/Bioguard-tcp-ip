@@ -1,7 +1,7 @@
 package com.donpedromz.service;
 
-import com.donpedromz.format.dto.DiagnoseMessageDto;
-import com.donpedromz.service.dto.DiagnoseResult;
+import com.donpedromz.dtos.DiagnoseMessageDto;
+import com.donpedromz.dtos.DiagnoseResult;
 
 /**
  * @version 1.0
